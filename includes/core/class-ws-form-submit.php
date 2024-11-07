@@ -380,6 +380,71 @@
 
 			return $read_count;
 		}
+        
+        //Read by id
+        public function db_read_by_id($get_meta = true, $get_expanded = true, $form_id_check = true, $bypass_user_capability_check = false) {
+
+    // User capability check
+    if(!$bypass_user_capability_check && !WS_Form_Common::can_user('read_submission')) { 
+        return false; 
+    }
+
+    // Check form ID
+    if($form_id_check) { 
+        self::db_check_form_id(); 
+    }
+
+    // Check ID
+    if(!isset($this->id) || empty($this->id)) {
+        return false; 
+    }
+
+    global $wpdb;
+
+    // Get form submission by ID
+    if($form_id_check) {
+        $sql = sprintf(
+            "SELECT %s FROM %s WHERE form_id = %u AND id = '%s' AND (NOT status = 'trash') LIMIT 1;",
+            self::DB_SELECT, $this->table_name, $this->form_id, $this->id
+        );
+    } else {
+        $sql = sprintf(
+            "SELECT %s FROM %s WHERE id = '%s' AND (NOT status = 'trash') LIMIT 1;",
+            self::DB_SELECT, $this->table_name, $this->id
+        );              
+    }
+
+    // Fetch the result as an associative array
+    $submit_array = $wpdb->get_row($sql, 'ARRAY_A');
+
+    // If no data found, return false
+    if(is_null($submit_array)) { 
+        $this->id = ''; 
+        return false; 
+    }
+
+    // Set class variables from fetched data
+    foreach($submit_array as $key => $value) {
+        $this->{$key} = $value;
+    }
+
+    // Convert into object
+    $submit_object = json_decode(json_encode($submit_array));
+
+    // Process meta data
+    if($get_meta) {
+        $this->meta = $submit_object->meta = self::db_get_submit_meta($submit_object, false, $bypass_user_capability_check);
+    }
+
+    // Get expanded user data
+    if($get_expanded) {
+        self::db_read_expanded($submit_object, true, true, true, true, true, true, true, $bypass_user_capability_check);
+    }
+
+    // Return the submission object
+    return $submit_object;
+}
+
 
 		// Read by hash
 		public function db_read_by_hash($get_meta = true, $get_expanded = true, $form_id_check = true, $bypass_user_capability_check = false) {

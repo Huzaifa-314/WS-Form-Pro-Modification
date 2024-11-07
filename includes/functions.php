@@ -270,6 +270,25 @@
 
 		return true;
 	}
+    
+	// Get submit object by ID
+    function wsf_submit_get_object($submit_id) {
+
+        // Ensure submit ID is valid
+        $submit_id = absint($submit_id);
+        if ($submit_id === 0) {
+            throw new Exception('Invalid submit ID');
+        }
+
+        // Create a new instance of WS_Form_Submit
+        $ws_form_submit = new WS_Form_Submit();
+        $ws_form_submit->id = $submit_id;
+
+        // Retrieve the submit data by ID
+        $ws_form_submit->db_read_by_id(true, true, false, true);
+
+        return $ws_form_submit;
+    }
 
 	// Get submit object by hash
 	function wsf_submit_get_by_hash($submit_hash) {
